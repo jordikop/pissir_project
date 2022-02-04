@@ -1,14 +1,16 @@
-package com.unipo.pissir.Mqtt;
+package com.unipo.pissir.mqtt;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unipo.pissir.domain.Temperatura;
+import com.unipo.pissir.dto.TemperaturaDTO;
 import com.unipo.pissir.repository.TemperaturaRepository;
+import com.unipo.pissir.services.TemperaturaService;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-
-import java.time.LocalDate;
-import java.util.Date;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Sample subscriber callback.
@@ -17,11 +19,20 @@ import java.util.Date;
  * @author <a href="mailto:luigi.derussis@uniupo.it">Luigi De Russis</a>
  * @version 1.1 (21/05/2019)
  */
+@Component
 public class SubscribeCallback implements MqttCallback
 {
-    TemperaturaRepository temperaturaRepository;
 
-    Temperatura temperatura = new Temperatura();
+    private final TemperaturaRepository temperaturaRepository;
+    private final TemperaturaService temperaturaService;
+
+    @Autowired
+    public SubscribeCallback(TemperaturaRepository temperaturaRepository, TemperaturaService temperaturaService) {
+        this.temperaturaRepository = temperaturaRepository;
+        this.temperaturaService = temperaturaService;
+    }
+
+//    Temperatura temperatura = new Temperatura();
 
 
     @Override
@@ -34,14 +45,26 @@ public class SubscribeCallback implements MqttCallback
         // what happens when a new message arrive: in this case, we print it out.
         System.out.println("Message arrived for the topic '" + topic + "': " + message.toString());
 
-        int temperature = temperatura.getTemperatura();
-        String timer = LocalDate.now().toString();
-        String uffId = (String.valueOf(temperatura.getUfficioId()));
-        Temperatura temperaturaEntity =  new Temperatura(temperature,uffId,timer);
+        byte[] messageByte = message.getPayload();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        TemperaturaDTO temperaturaDTO = objectMapper.readValue(messageByte, TemperaturaDTO.class);
+
+//        int temperature = temperatura.getTemperatura();
+//        String timer = LocalDate.now().toString();
+//        String uffId = (String.valueOf(temperatura.getUfficioId()));
+//        Temperatura temperaturaEntity =  new Temperatura(temperature,uffId,timer);
 
 
+        int temperaturaField = temperaturaDTO.getTemperatura();
+        String timer = temperaturaDTO.getTimer();
 
-       // temperaturaRepository.save(temperaturaEntity);
+        Temperatura temperaturaEntity = new Temperatura();
+        temperaturaEntity.setTemperatura(temperaturaField);
+        temperaturaEntity.setTimer(timer);
+
+
+        temperaturaService.save(temperaturaEntity);
 
 
         // additional action for the Last Will and Testament message
