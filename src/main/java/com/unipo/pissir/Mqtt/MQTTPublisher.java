@@ -1,14 +1,12 @@
-package com.unipo.pissir.Mqtt;
+package com.unipo.pissir.mqtt;
 
-import com.unipo.pissir.domain.Temperatura;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.unipo.pissir.domain.Umidita;
+import com.unipo.pissir.dto.TemperaturaDTO;
 import com.unipo.pissir.repository.TemperaturaRepository;
 import org.eclipse.paho.client.mqttv3.*;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
  * Sample publisher for MQTT. It uses the Eclipse Paho library and Mosquitto as a broker.
@@ -65,10 +63,12 @@ public class MQTTPublisher {
 
             // connect the publisher to the broker
             client.connect(options);
-                Temperatura temperatura = new Temperatura();
+                TemperaturaDTO temperaturaDto = new TemperaturaDTO();
+                temperaturaDto.setTemperatura(20);
+                temperaturaDto.setTimer("04/02/2022");
                 Umidita umidita = new Umidita();
             // publish something...
-            publishTemperature(temperatura,umidita);
+            publishTemperature(temperaturaDto, umidita);
 
         } catch (MqttException e) {
             e.printStackTrace();
@@ -81,7 +81,7 @@ public class MQTTPublisher {
      *
      */
 
-    private void publishTemperature(Temperatura temperatura , Umidita umidita) throws MqttException
+    private void publishTemperature(TemperaturaDTO temperaturaDTO , Umidita umidita) throws MqttException
     {
         TemperaturaRepository temperaturaRepository;
 
@@ -91,27 +91,45 @@ public class MQTTPublisher {
 
         // message content
 
-        String temperature = (String.valueOf(temperatura.getTemperatura()));
-        String timer = (String.valueOf(temperatura.getTimer()));
-        String uffId = (String.valueOf(temperatura.getUfficioId()));
+        String temperature = (String.valueOf(temperaturaDTO.getTemperatura()));
+        String timer = (String.valueOf(temperaturaDTO.getTimer()));
+//        String uffId = (String.valueOf(temperaturaDTO.getUfficioId()));
 
 
-        String umidite = (String.valueOf(umidita.getUmidita()));
+//        String umidite = (String.valueOf(umidita.getUmidita()));
 
 
         // publish the message on the given topic
         // by default, the QoS is 1 and the message is not retained
-        temperatureTopic.publish(new MqttMessage(temperature.getBytes()));
-        temperatureTopic.publish(new MqttMessage(timer.getBytes()));
-        temperatureTopic.publish(new MqttMessage(uffId.getBytes()));
+//        temperatureTopic.publish(new MqttMessage(temperature.getBytes()));
+//        temperatureTopic.publish(new MqttMessage(timer.getBytes()));
+//        temperatureTopic.publish(new MqttMessage(uffId.getBytes()));
 
-        umiditeTopic.publish(new MqttMessage(umidite.getBytes()));
+//        String encoded = Base64.encodeToString(fullyReadFileToBytes(file), Base64.DEFAULT);
+
+//        json.put("file", encoded);
+
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        byte[] bytesTemperature = new byte[0];
+        try {
+            bytesTemperature = ow.writeValueAsBytes(temperaturaDTO);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+//        MqttMessage message2 = new MqttMessage(json.toString().getBytes("utf-8"));
+
+        MqttMessage mqttMessageTemperature = new MqttMessage(bytesTemperature);
+
+        temperatureTopic.publish(mqttMessageTemperature);
+
+//        umiditeTopic.publish(new MqttMessage(umidite.getBytes()));
 
 
         // debug
         System.out.println("Published message on topic '"
-                + temperatureTopic.getName() + "': " + temperature+" : "+timer+" :"+uffId);
-        System.out.println("Published message on topic '" + umiditeTopic.getName() + "': " + umidite);
+                + temperatureTopic.getName() + "': " + temperature +" : "+timer);
+//        System.out.println("Published message on topic '" + umiditeTopic.getName() + "': " + umidite);
     }
 
     /**

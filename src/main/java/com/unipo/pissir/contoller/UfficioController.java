@@ -50,17 +50,19 @@ public class UfficioController
     @PutMapping("/ufficio/{id}")
    Ufficio replaceUfficio(@RequestBody Ufficio newUfficio, @PathVariable Long id) {
 
-        System.out.println(newUfficio);
-        return ufficioRepository.findById(id)
-                .map(ufficio -> {
-                    ufficio.setUfficioId(newUfficio.getUfficioId());
-                    ufficio.setEdificioId(newUfficio.getEdificioId());
-                    return ufficioRepository.save(ufficio);
-                })
-                .orElseGet(() -> {
-                   newUfficio.setId(id);
-                    return ufficioRepository.save(newUfficio);
-                });
+        return ufficioRepository.save(newUfficio);
+
+//        System.out.println(newUfficio);
+//        return ufficioRepository.findById(id)
+//                .map(ufficio -> {
+//                    ufficio.setUfficioId(newUfficio.getUfficioId());
+//                    ufficio.setEdificioId(newUfficio.getEdificioId());
+//                    return ufficioRepository.save(ufficio);
+//                })
+//                .orElseGet(() -> {
+//                   newUfficio.setId(id);
+//                    return ufficioRepository.save(newUfficio);
+//                });
     }
     @DeleteMapping("/ufficio/{id}")
     void deleteUfficio(@PathVariable Long id) {ufficioRepository.deleteById(id);
